@@ -1,5 +1,5 @@
 def main():
-    print("Hello from python-project-template!")
+    print("Hello from pathwright!")
 
 
 if __name__ == "__main__":
