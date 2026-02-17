@@ -7,6 +7,34 @@ Updated: 2026-02-17
 - CLI: `uv run pathwright --help`
 - MCP server: `uv run pathwright-mcp`
 
+## Access Control Settings
+
+Pathwright supports configurable path allow/deny rules via environment variables:
+
+- `PATHWRIGHT__PATH_WHITELIST`: JSON list of allowed path patterns.
+- `PATHWRIGHT__PATH_BLACKLIST`: JSON list of denied path patterns.
+
+Rules:
+- Blacklist is evaluated first.
+- If whitelist is empty, all non-blacklisted paths are allowed.
+- If whitelist is not empty, path must match whitelist and must not match blacklist.
+
+Pattern support:
+- Exact path: `/data/file.txt`
+- Wildcards: `/data/*.txt`, `/data/*/report-?.md`
+- Include subdirectories: `/data/project/**` (matches directory and all descendants)
+
+Example:
+
+```bash
+export PATHWRIGHT__PATH_WHITELIST='["/workspace/allowed/**"]'
+export PATHWRIGHT__PATH_BLACKLIST='["/workspace/allowed/private/**"]'
+```
+
+When denied, operations return clear errors such as:
+- `Access denied for file '/path': matched blacklist pattern '...'.`
+- `Access denied for path '/path': not matched by whitelist patterns.`
+
 ## Abilities
 
 ### Files

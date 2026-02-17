@@ -20,11 +20,20 @@ from pathwright.domains.filesystem.models import (
 class LocalFilesystemGateway:
     """Implements filesystem operations using local OS files."""
 
+    def __init__(
+        self,
+        whitelist_patterns: list[str] | None = None,
+        blacklist_patterns: list[str] | None = None,
+    ) -> None:
+        self._whitelist_patterns = [self._normalize_pattern(pattern) for pattern in (whitelist_patterns or [])]
+        self._blacklist_patterns = [self._normalize_pattern(pattern) for pattern in (blacklist_patterns or [])]
+
     def create_files(self, files: list[tuple[str, str]], overwrite: bool = False) -> list[FileResult]:
         results: list[FileResult] = []
         for path, content in files:
             file_path = Path(path)
             try:
+                self._assert_allowed(str(file_path), kind="file")
                 if file_path.exists() and not overwrite:
                     results.append(FileResult(path=path, success=False, message="file already exists"))
                     continue
@@ -44,6 +53,7 @@ class LocalFilesystemGateway:
         for path in paths:
             file_path = Path(path)
             try:
+                self._assert_allowed(str(file_path), kind="file")
                 content = file_path.read_text(encoding="utf-8")
                 intervals = line_intervals.get(path) if line_intervals else None
                 if intervals:
@@ -76,6 +86,7 @@ class LocalFilesystemGateway:
         for path, content in files:
             file_path = Path(path)
             try:
+                self._assert_allowed(str(file_path), kind="file")
                 if not file_path.exists():
                     results.append(FileResult(path=path, success=False, message="file does not exist"))
                     continue
@@ -90,6 +101,7 @@ class LocalFilesystemGateway:
         for path in paths:
             file_path = Path(path)
             try:
+                self._assert_allowed(str(file_path), kind="file")
                 file_path.unlink()
                 results.append(FileResult(path=path, success=True, message="deleted"))
             except OSError as error:
@@ -104,6 +116,7 @@ class LocalFilesystemGateway:
         content_query: str | None = None,
     ) -> list[str]:
         root = Path(base_path)
+        self._assert_allowed(str(root), kind="path")
         matches: list[str] = []
         normalized_extension = None
         if extension:
@@ -111,6 +124,8 @@ class LocalFilesystemGateway:
 
         for file_path in root.rglob("*"):
             if not file_path.is_file():
+                continue
+            if not self._is_allowed(str(file_path)):
                 continue
             if name_pattern and not fnmatch.fnmatch(file_path.name, name_pattern):
                 continue
@@ -128,6 +143,7 @@ class LocalFilesystemGateway:
 
     def copy_or_move_files(self, paths: list[str], destination: str, move: bool = False) -> list[FileResult]:
         destination_path = Path(destination)
+        self._assert_allowed(str(destination_path), kind="directory")
         destination_path.mkdir(parents=True, exist_ok=True)
         results: list[FileResult] = []
 
@@ -135,6 +151,8 @@ class LocalFilesystemGateway:
             source = Path(path)
             target = destination_path / source.name
             try:
+                self._assert_allowed(str(source), kind="file")
+                self._assert_allowed(str(target), kind="file")
                 if move:
                     shutil.move(str(source), str(target))
                     action = "moved"
@@ -151,6 +169,7 @@ class LocalFilesystemGateway:
         for path in paths:
             directory = Path(path)
             try:
+                self._assert_allowed(str(directory), kind="directory")
                 directory.mkdir(parents=True, exist_ok=exist_ok)
                 results.append(FileResult(path=path, success=True, message="created"))
             except OSError as error:
@@ -162,11 +181,16 @@ class LocalFilesystemGateway:
         for path in paths:
             directory = Path(path)
             entries: list[DirectoryEntry] = []
+            if not self._is_allowed(str(directory)):
+                data[path] = entries
+                continue
             if not directory.is_dir():
                 data[path] = entries
                 continue
 
             for item in sorted(directory.iterdir(), key=lambda value: value.name.lower()):
+                if not self._is_allowed(str(item)):
+                    continue
                 stats = item.stat()
                 entry = DirectoryEntry.from_values(
                     name=item.name,
@@ -188,6 +212,7 @@ class LocalFilesystemGateway:
         for path in paths:
             directory = Path(path)
             try:
+                self._assert_allowed(str(directory), kind="directory")
                 if recursive:
                     shutil.rmtree(directory)
                 else:
@@ -199,9 +224,12 @@ class LocalFilesystemGateway:
 
     def search_directories(self, base_path: str, name_pattern: str | None = None) -> list[str]:
         root = Path(base_path)
+        self._assert_allowed(str(root), kind="path")
         matches: list[str] = []
         for directory in root.rglob("*"):
             if not directory.is_dir():
+                continue
+            if not self._is_allowed(str(directory)):
                 continue
             if name_pattern and not fnmatch.fnmatch(directory.name, name_pattern):
                 continue
@@ -215,6 +243,7 @@ class LocalFilesystemGateway:
         move: bool = False,
     ) -> list[FileResult]:
         destination_path = Path(destination)
+        self._assert_allowed(str(destination_path), kind="directory")
         destination_path.mkdir(parents=True, exist_ok=True)
         results: list[FileResult] = []
 
@@ -222,6 +251,8 @@ class LocalFilesystemGateway:
             source = Path(path)
             target = destination_path / source.name
             try:
+                self._assert_allowed(str(source), kind="directory")
+                self._assert_allowed(str(target), kind="directory")
                 if move:
                     shutil.move(str(source), str(target))
                     action = "moved"
@@ -235,12 +266,16 @@ class LocalFilesystemGateway:
 
     def filesystem_outline(self, base_path: str, depth: int = 3) -> FilesystemOutlineNode:
         root = Path(base_path)
+        self._assert_allowed(str(root), kind="path")
         return self._build_outline(root, max(depth, 0))
 
     def files_outline(self, paths: list[str]) -> dict[str, list[DocumentSection]]:
         outlines: dict[str, list[DocumentSection]] = {}
         for path in paths:
             file_path = Path(path)
+            if not self._is_allowed(str(file_path)):
+                outlines[path] = []
+                continue
             suffix = file_path.suffix.lower()
             try:
                 content = file_path.read_text(encoding="utf-8")
@@ -263,6 +298,8 @@ class LocalFilesystemGateway:
         children: list[FilesystemOutlineNode] = []
         if path.is_dir() and depth > 0:
             for child in sorted(path.iterdir(), key=lambda value: value.name.lower()):
+                if not self._is_allowed(str(child)):
+                    continue
                 children.append(self._build_outline(child, depth - 1))
         return FilesystemOutlineNode(
             name=path.name or str(path),
@@ -401,3 +438,59 @@ class LocalFilesystemGateway:
         if not comments:
             return None
         return "\n".join(reversed(comments))
+
+    def _normalize_path(self, path: str) -> str:
+        return str(Path(path).expanduser().resolve(strict=False)).replace("\\", "/")
+
+    def _normalize_pattern(self, pattern: str) -> str:
+        pattern = pattern.strip()
+        if not pattern:
+            return pattern
+        normalized = pattern.replace("\\", "/")
+        wildcard_parts = ["*", "?", "[", "]"]
+        if normalized.startswith("~/"):
+            normalized = str(Path(normalized).expanduser()).replace("\\", "/")
+        elif not Path(normalized).is_absolute():
+            normalized = str((Path.cwd() / normalized).resolve(strict=False)).replace("\\", "/")
+        if not any(part in normalized for part in wildcard_parts):
+            normalized = self._normalize_path(normalized)
+        return normalized
+
+    def _matches_pattern(self, normalized_path: str, pattern: str) -> bool:
+        if not pattern:
+            return False
+        if pattern.endswith("/**"):
+            base = pattern[:-3].rstrip("/")
+            return normalized_path == base or normalized_path.startswith(f"{base}/")
+        return fnmatch.fnmatch(normalized_path, pattern)
+
+    def _match_first(self, normalized_path: str, patterns: list[str]) -> str | None:
+        for pattern in patterns:
+            if self._matches_pattern(normalized_path, pattern):
+                return pattern
+        return None
+
+    def _is_allowed(self, path: str) -> bool:
+        normalized_path = self._normalize_path(path)
+        blacklisted_by = self._match_first(normalized_path, self._blacklist_patterns)
+        if blacklisted_by:
+            return False
+        if not self._whitelist_patterns:
+            return True
+        whitelisted_by = self._match_first(normalized_path, self._whitelist_patterns)
+        return whitelisted_by is not None
+
+    def _assert_allowed(self, path: str, *, kind: str) -> None:
+        normalized_path = self._normalize_path(path)
+        blacklisted_by = self._match_first(normalized_path, self._blacklist_patterns)
+        if blacklisted_by:
+            raise PermissionError(
+                f"Access denied for {kind} '{path}': matched blacklist pattern '{blacklisted_by}'."
+            )
+
+        if self._whitelist_patterns:
+            whitelisted_by = self._match_first(normalized_path, self._whitelist_patterns)
+            if not whitelisted_by:
+                raise PermissionError(
+                    f"Access denied for {kind} '{path}': not matched by whitelist patterns."
+                )
