@@ -19,4 +19,7 @@ File system operations will include:
 12. **Copy or Move Directories**: Allowing to copy or move one or more existing directories to a specified locations.
 
 13. **File SystemOutline**: Generating an outline of the file system structure, showing directories and files in a hierarchical format. This will help users visualize the organization of their files and directories. The outline will include details such as file sizes, types, and modification dates, providing a comprehensive overview of the file system. Users can specify the depth of the outline to focus on specific levels of the directory structure.
-14. **Files Outline**: Generating an outline of the specified files. This will provide users with a detailed view of the selected files. For MD files, the outline will include the structure of the document, such as headings, subheadings, start and end lines of each section. For python files, the outline will include the structure of the code, such as file level docstring, classes, functions, their respective line numbers and docstrings.
+14. **Files Outline**: Generating an outline of the specified files. This will provide users with a detailed view of the selected files. 
+    1.  For markdown (MD) files, the outline will include the structure of the document, such as headings, subheadings, start and end lines of each section. 
+    2.  For python files, the outline will include the structure of the code, such as file level docstring, classes, functions, their respective line numbers and docstrings. 
+    3.  For GO files, the outline will include the structure of the code, such as file level comments, functions, their respective line numbers and comments.
