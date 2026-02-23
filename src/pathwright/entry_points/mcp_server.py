@@ -25,7 +25,16 @@ def _to_serializable(value: Any) -> Any:
     return value
 
 
-mcp = FastMCP("pathwright")
+mcp = FastMCP(
+    name="pathwright",
+    instructions=(
+        "Filesystem operations server. Always use absolute or workspace-relative paths, "
+        "and avoid destructive actions unless explicitly requested."
+    ),
+    version=get_settings().app_version,
+    on_duplicate="error",
+    mask_error_details=False,
+)
 
 
 def build_service() -> FilesystemService:
@@ -354,9 +363,7 @@ def filesystem_outline(
     ],
     depth: Annotated[
         int,
-        Field(
-            description="Maximum traversal depth for the outline (default: 3).", ge=0
-        ),
+        Field(description="Maximum traversal depth for the outline (default: 3)."),
     ] = 3,
 ) -> dict[str, Any]:
     """Build a hierarchical outline of the filesystem."""
