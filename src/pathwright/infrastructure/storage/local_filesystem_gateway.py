@@ -94,7 +94,11 @@ class LocalFilesystemGateway:
 
         return "".join(chunks)
 
-    def update_files(self, files: Sequence[tuple[str, str]]) -> list[FileResult]:
+    def update_files(
+        self,
+        files: Sequence[tuple[str, str]],
+        line_intervals: dict[str, Sequence[tuple[int, int]]] | None = None,
+    ) -> list[FileResult]:
         results: list[FileResult] = []
         for path, content in files:
             file_path = Path(path)
@@ -107,11 +111,45 @@ class LocalFilesystemGateway:
                         )
                     )
                     continue
+                intervals = line_intervals.get(path) if line_intervals else None
+                if intervals:
+                    current_content = file_path.read_text(encoding="utf-8")
+                    content = self._replace_by_intervals(
+                        content=current_content,
+                        intervals=intervals,
+                        replacement=content,
+                    )
+
                 file_path.write_text(content, encoding="utf-8")
                 results.append(FileResult(path=path, success=True, message="updated"))
-            except OSError as error:
+            except (OSError, ValueError) as error:
                 results.append(FileResult(path=path, success=False, message=str(error)))
         return results
+
+    def _replace_by_intervals(
+        self,
+        content: str,
+        intervals: Sequence[tuple[int, int]],
+        replacement: str,
+    ) -> str:
+        lines = content.splitlines(keepends=True)
+        normalized_intervals = sorted(
+            intervals, key=lambda value: value[0], reverse=True
+        )
+
+        for start_line, end_line in normalized_intervals:
+            if start_line < 1 or end_line < 1 or start_line > end_line:
+                raise ValueError("line interval must satisfy: 1 <= start <= end")
+
+            start_index = start_line - 1
+            end_index = min(end_line, len(lines))
+
+            if start_index >= len(lines):
+                continue
+
+            lines[start_index:end_index] = [replacement]
+
+        return "".join(lines)
 
     def delete_files(self, paths: Sequence[str]) -> list[FileResult]:
         results: list[FileResult] = []

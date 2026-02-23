@@ -32,6 +32,7 @@ Examples:
 ```bash
 uv run pathwright create-files --item "tmp/a.txt::hello"
 uv run pathwright read-files --path "tmp/a.txt"
+uv run pathwright update-files --item "tmp/a.txt::patched\n" --interval "tmp/a.txt::2:4"
 uv run pathwright search-files --base-path . --extension py --name-pattern "*.py"
 uv run pathwright fs-outline --base-path . --depth 2
 ```

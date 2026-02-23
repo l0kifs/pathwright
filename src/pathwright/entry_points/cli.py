@@ -12,7 +12,9 @@ from rich.console import Console
 
 from pathwright.config.settings import get_settings
 from pathwright.domains.filesystem.services import FilesystemService
-from pathwright.infrastructure.storage.local_filesystem_gateway import LocalFilesystemGateway
+from pathwright.infrastructure.storage.local_filesystem_gateway import (
+    LocalFilesystemGateway,
+)
 
 app = typer.Typer(help="Filesystem operations CLI")
 console = Console()
@@ -48,7 +50,9 @@ def _parse_line_intervals(items: Iterable[str]) -> dict[str, list[tuple[int, int
             start = int(start_raw)
             end = int(end_raw)
         except ValueError as error:
-            raise typer.BadParameter("interval must be in format 'path::start:end'") from error
+            raise typer.BadParameter(
+                "interval must be in format 'path::start:end'"
+            ) from error
 
         intervals_by_path.setdefault(path, []).append((start, end))
     return intervals_by_path
@@ -77,8 +81,14 @@ def _run_and_print(operation: Callable[[], Any]) -> None:
 
 
 @app.command("create-files")
-def create_files(item: list[str] = typer.Option(..., help="path::content"), overwrite: bool = False) -> None:
-    _run_and_print(lambda: build_service().create_files(_parse_file_items(item), overwrite=overwrite))
+def create_files(
+    item: list[str] = typer.Option(..., help="path::content"), overwrite: bool = False
+) -> None:
+    _run_and_print(
+        lambda: build_service().create_files(
+            _parse_file_items(item), overwrite=overwrite
+        )
+    )
 
 
 @app.command("read-files")
@@ -87,12 +97,22 @@ def read_files(
     interval: list[str] | None = typer.Option(None, help="path::start:end"),
 ) -> None:
     line_intervals = _parse_line_intervals(interval) if interval else None
-    _run_and_print(lambda: build_service().read_files(path, line_intervals=line_intervals))
+    _run_and_print(
+        lambda: build_service().read_files(path, line_intervals=line_intervals)
+    )
 
 
 @app.command("update-files")
-def update_files(item: list[str] = typer.Option(..., help="path::content")) -> None:
-    _run_and_print(lambda: build_service().update_files(_parse_file_items(item)))
+def update_files(
+    item: list[str] = typer.Option(..., help="path::content"),
+    interval: list[str] | None = typer.Option(None, help="path::start:end"),
+) -> None:
+    line_intervals = _parse_line_intervals(interval) if interval else None
+    _run_and_print(
+        lambda: build_service().update_files(
+            _parse_file_items(item), line_intervals=line_intervals
+        )
+    )
 
 
 @app.command("delete-files")
@@ -118,8 +138,16 @@ def search_files(
 
 
 @app.command("transfer-files")
-def transfer_files(path: list[str] = typer.Option(...), destination: str = typer.Option(...), move: bool = False) -> None:
-    _run_and_print(lambda: build_service().copy_or_move_files(path, destination=destination, move=move))
+def transfer_files(
+    path: list[str] = typer.Option(...),
+    destination: str = typer.Option(...),
+    move: bool = False,
+) -> None:
+    _run_and_print(
+        lambda: build_service().copy_or_move_files(
+            path, destination=destination, move=move
+        )
+    )
 
 
 @app.command("create-dirs")
@@ -133,28 +161,54 @@ def read_dirs(path: list[str] = typer.Option(...)) -> None:
 
 
 @app.command("update-dirs")
-def update_dirs(path: list[str] = typer.Option(...), destination: str = typer.Option(...), copy: bool = False) -> None:
-    _run_and_print(lambda: build_service().update_directories(path, destination=destination, move=not copy))
+def update_dirs(
+    path: list[str] = typer.Option(...),
+    destination: str = typer.Option(...),
+    copy: bool = False,
+) -> None:
+    _run_and_print(
+        lambda: build_service().update_directories(
+            path, destination=destination, move=not copy
+        )
+    )
 
 
 @app.command("delete-dirs")
-def delete_dirs(path: list[str] = typer.Option(...), non_recursive: bool = False) -> None:
-    _run_and_print(lambda: build_service().delete_directories(path, recursive=not non_recursive))
+def delete_dirs(
+    path: list[str] = typer.Option(...), non_recursive: bool = False
+) -> None:
+    _run_and_print(
+        lambda: build_service().delete_directories(path, recursive=not non_recursive)
+    )
 
 
 @app.command("search-dirs")
-def search_dirs(base_path: str = typer.Option(...), name_pattern: str | None = None) -> None:
-    _run_and_print(lambda: build_service().search_directories(base_path, name_pattern=name_pattern))
+def search_dirs(
+    base_path: str = typer.Option(...), name_pattern: str | None = None
+) -> None:
+    _run_and_print(
+        lambda: build_service().search_directories(base_path, name_pattern=name_pattern)
+    )
 
 
 @app.command("transfer-dirs")
-def transfer_dirs(path: list[str] = typer.Option(...), destination: str = typer.Option(...), move: bool = False) -> None:
-    _run_and_print(lambda: build_service().copy_or_move_directories(path, destination=destination, move=move))
+def transfer_dirs(
+    path: list[str] = typer.Option(...),
+    destination: str = typer.Option(...),
+    move: bool = False,
+) -> None:
+    _run_and_print(
+        lambda: build_service().copy_or_move_directories(
+            path, destination=destination, move=move
+        )
+    )
 
 
 @app.command("fs-outline")
 def fs_outline(base_path: str = typer.Option(...), depth: int = 3) -> None:
-    _run_and_print(lambda: build_service().filesystem_outline(base_path=base_path, depth=depth))
+    _run_and_print(
+        lambda: build_service().filesystem_outline(base_path=base_path, depth=depth)
+    )
 
 
 @app.command("files-outline")

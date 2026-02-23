@@ -1,6 +1,6 @@
 # Pathwright Reference
 
-Updated: 2026-02-17
+Updated: 2026-02-23
 
 ## Entry Points
 
@@ -75,15 +75,25 @@ When denied, operations return clear errors such as:
 
 #### Update Files
 
-**CLI Command**: `update-files --item "path::new content" [--item "path2::new content"]`  
-**MCP Tool**: `update_files(files: list[list[str]])`
+**CLI Command**: `update-files --item "path::new content" [--item "path2::new content"] [--interval "path::start:end"]`  
+**MCP Tool**: `update_files(files: list[list[str]], line_intervals: dict[str, list[list[int]]] | None = None)`
 
 **Arguments**:
 - `item` / `files`: Updated file content definitions.
+- `interval`: Optional line intervals per file in `path::start:end` format. Repeat flag to pass multiple intervals.
+- `line_intervals`: Optional map from file path to one or more `[start, end]` line intervals (1-based, inclusive).
+
+**Behavior**:
+- If no intervals are provided, replaces full file content.
+- If intervals are provided, replaces each requested line range with the provided content.
+- Out-of-range intervals are handled gracefully and leave file content unchanged for those ranges.
+- Invalid intervals (`start < 1`, `end < 1`, `start > end`) return an error result for that file.
 
 **Examples**:
 - CLI: `uv run pathwright update-files --item "tmp/a.txt::updated"`
+- CLI: `uv run pathwright update-files --item "tmp/a.txt::replacement\n" --interval "tmp/a.txt::10:20"`
 - MCP: `update_files(files=[["tmp/a.txt", "updated"]])`
+- MCP: `update_files(files=[["tmp/a.txt", "replacement\n"]], line_intervals={"tmp/a.txt": [[10, 20]]})`
 
 #### Delete Files
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import asdict, is_dataclass
 from typing import Annotated, Any
 
@@ -27,20 +28,21 @@ def _to_serializable(value: Any) -> Any:
 
 def _normalize_line_intervals(
     line_intervals: dict[str, list[list[int]]] | None,
-) -> dict[str, list[tuple[int, int]]] | None:
+) -> dict[str, Sequence[tuple[int, int]]] | None:
     if line_intervals is None:
         return None
 
-    normalized: dict[str, list[tuple[int, int]]] = {}
+    normalized: dict[str, Sequence[tuple[int, int]]] = {}
     for path, intervals in line_intervals.items():
-        normalized[path] = []
+        normalized_intervals: list[tuple[int, int]] = []
         for interval in intervals:
             if len(interval) != 2:
                 raise ValueError(
                     "line interval must contain exactly two values: start and end"
                 )
             start_line, end_line = interval
-            normalized[path].append((start_line, end_line))
+            normalized_intervals.append((start_line, end_line))
+        normalized[path] = normalized_intervals
     return normalized
 
 
@@ -143,10 +145,19 @@ def update_files(
         list[list[str]],
         Field(description="Files to update as [path, content] pairs."),
     ],
+    line_intervals: Annotated[
+        dict[str, list[list[int]]] | None,
+        Field(
+            description="Optional map of path -> inclusive [start_line, end_line] intervals (default: null)."
+        ),
+    ] = None,
 ) -> list[dict[str, Any]]:
     """Update one or more files. Each item is [path, content]."""
     return _to_serializable(
-        build_service().update_files(files=_normalize_file_items(files))
+        build_service().update_files(
+            files=_normalize_file_items(files),
+            line_intervals=_normalize_line_intervals(line_intervals),
+        )
     )
 
 
