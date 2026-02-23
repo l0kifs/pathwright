@@ -5,9 +5,34 @@ build-backend = "uv_build"
 [project]
 name = "pathwright"
 version = "0.1.0"
-description = "Add your description here"
+description = "Python filesystem operations toolkit with CLI and MCP server for AI integrations"
 readme = "README.md"
-requires-python = ">=3.12"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+authors = [
+    { name = "Sergei Konovalov", email = "l0kifs91@gmail.com" },
+]
+keywords = [
+    "filesystem",
+    "mcp",
+    "model-context-protocol",
+    "cli",
+    "ai",
+    "llm",
+    "file-management",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Filesystems",
+    "Topic :: Utilities",
+]
 dependencies = [
     # Configuration and logging
     "pydantic-settings>=2.0.0",
@@ -27,6 +52,11 @@ dependencies = [
 [project.scripts]
 pathwright = "pathwright.entry_points.cli:main"
 pathwright-mcp = "pathwright.entry_points.mcp_server:run"
+
+[project.urls]
+Homepage = "https://github.com/l0kifs/pathwright"
+Repository = "https://github.com/l0kifs/pathwright"
+Issues = "https://github.com/l0kifs/pathwright/issues"
 
 [dependency-groups]
 dev = [
