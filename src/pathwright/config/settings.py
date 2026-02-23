@@ -1,11 +1,12 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """
     Configuration settings.
     """
+
     model_config = SettingsConfigDict(
         env_prefix="PATHWRIGHT__",
         env_nested_delimiter="__",
@@ -17,7 +18,7 @@ class Settings(BaseSettings):
 
     # Application settings
     app_name: str = Field(default="pathwright", description="Application name")
-    app_version: str = Field(default="0.1.0", description="Application version")
+    app_version: str = Field(default="0.2.0", description="Application version")
 
     # Access control settings
     path_whitelist: list[str] = Field(

@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "pathwright"
-version = "0.1.0"
+version = "0.2.0"
 description = "Python filesystem operations toolkit with CLI and MCP server for AI integrations"
 readme = "README.md"
 license = { file = "LICENSE" }
