@@ -17,7 +17,7 @@ def test_update_files_happy_path(invoke_cli, mcp_call, workspace: Path) -> None:
     assert cli_payload[0]["success"] is True
     assert cli_file.read_text(encoding="utf-8") == "after"
 
-    mcp_payload = mcp_call("update_files", {"files": [(str(mcp_file), "after")]})
+    mcp_payload = mcp_call("update_files", {"files": [[str(mcp_file), "after"]]})
     assert mcp_payload[0]["success"] is True
     assert mcp_file.read_text(encoding="utf-8") == "after"
 
@@ -31,6 +31,6 @@ def test_update_files_edge_cases(invoke_cli, mcp_call, workspace: Path) -> None:
     assert cli_payload[0]["success"] is False
     assert cli_payload[0]["message"] == "file does not exist"
 
-    mcp_payload = mcp_call("update_files", {"files": [(str(missing), "after")]})
+    mcp_payload = mcp_call("update_files", {"files": [[str(missing), "after"]]})
     assert mcp_payload[0]["success"] is False
     assert mcp_payload[0]["message"] == "file does not exist"

@@ -22,7 +22,10 @@ def test_create_files_happy_path(invoke_cli, mcp_call, workspace: Path) -> None:
     cli_payload = parse_cli_json(cli_result.stdout)
     assert all(item["success"] for item in cli_payload)
 
-    mcp_payload = mcp_call("create_files", {"files": [(str(workspace / "c.txt"), "mcp")], "overwrite": False})
+    mcp_payload = mcp_call(
+        "create_files",
+        {"files": [[str(workspace / "c.txt"), "mcp"]], "overwrite": False},
+    )
     assert mcp_payload[0]["success"] is True
     assert (workspace / "c.txt").read_text(encoding="utf-8") == "mcp"
 
@@ -38,6 +41,8 @@ def test_create_files_edge_cases(invoke_cli, mcp_call, workspace: Path) -> None:
     cli_payload = parse_cli_json(cli_result.stdout)
     assert cli_payload[0]["success"] is False
 
-    mcp_payload = mcp_call("create_files", {"files": [(str(existing), "new")], "overwrite": False})
+    mcp_payload = mcp_call(
+        "create_files", {"files": [[str(existing), "new"]], "overwrite": False}
+    )
     assert mcp_payload[0]["success"] is False
     assert existing.read_text(encoding="utf-8") == "original"

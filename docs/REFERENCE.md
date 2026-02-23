@@ -42,25 +42,25 @@ When denied, operations return clear errors such as:
 #### Create Files
 
 **CLI Command**: `create-files --item "path::content" [--item "path2::content2"] [--overwrite]`  
-**MCP Tool**: `create_files(files: list[tuple[str, str]], overwrite: bool = False)`
+**MCP Tool**: `create_files(files: list[list[str]], overwrite: bool = False)`
 
 **Arguments**:
-- `item` / `files`: File definitions. Each entry is `(path, content)`; CLI uses `path::content`.
+- `item` / `files`: File definitions. Each entry is `[path, content]`; CLI uses `path::content`.
 - `overwrite`: Allow replacing existing files.
 
 **Examples**:
 - CLI: `uv run pathwright create-files --item "tmp/a.txt::hello" --item "tmp/b.txt::world"`
-- MCP: `create_files(files=[("tmp/a.txt", "hello")], overwrite=False)`
+- MCP: `create_files(files=[["tmp/a.txt", "hello"]], overwrite=False)`
 
 #### Read Files
 
 **CLI Command**: `read-files --path "file1" [--path "file2"] [--interval "path::start:end"]`  
-**MCP Tool**: `read_files(paths: list[str], line_intervals: dict[str, list[tuple[int, int]]] | None = None)`
+**MCP Tool**: `read_files(paths: list[str], line_intervals: dict[str, list[list[int]]] | None = None)`
 
 **Arguments**:
 - `path` / `paths`: One or more file paths.
 - `interval`: Optional line intervals per file in `path::start:end` format. Repeat flag to pass multiple intervals.
-- `line_intervals`: Optional map from file path to one or more `(start, end)` line intervals (1-based, inclusive).
+- `line_intervals`: Optional map from file path to one or more `[start, end]` line intervals (1-based, inclusive).
 
 **Behavior**:
 - If no intervals are provided, returns full file content.
@@ -71,19 +71,19 @@ When denied, operations return clear errors such as:
 **Examples**:
 - CLI: `uv run pathwright read-files --path "tmp/a.txt"`
 - CLI: `uv run pathwright read-files --path "tmp/a.txt" --interval "tmp/a.txt::10:20"`
-- MCP: `read_files(paths=["tmp/a.txt", "tmp/b.txt"], line_intervals={"tmp/a.txt": [(1, 50), (120, 150)]})`
+- MCP: `read_files(paths=["tmp/a.txt", "tmp/b.txt"], line_intervals={"tmp/a.txt": [[1, 50], [120, 150]]})`
 
 #### Update Files
 
 **CLI Command**: `update-files --item "path::new content" [--item "path2::new content"]`  
-**MCP Tool**: `update_files(files: list[tuple[str, str]])`
+**MCP Tool**: `update_files(files: list[list[str]])`
 
 **Arguments**:
 - `item` / `files`: Updated file content definitions.
 
 **Examples**:
 - CLI: `uv run pathwright update-files --item "tmp/a.txt::updated"`
-- MCP: `update_files(files=[("tmp/a.txt", "updated")])`
+- MCP: `update_files(files=[["tmp/a.txt", "updated"]])`
 
 #### Delete Files
 

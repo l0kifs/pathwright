@@ -1,0 +1,10 @@
+{
+	"servers": {
+		"pathwright-local": {
+			"type": "stdio",
+			"command": "uv",
+			"args": ["run", "pathwright-mcp"],
+			"cwd": "${workspaceFolder}"
+		}
+	}
+}

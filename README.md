@@ -44,6 +44,35 @@ Run with:
 uv run pathwright-mcp
 ```
 
+VS Code workspace MCP config example (`.vscode/mcp.json`):
+
+```json
+{
+	"servers": {
+		"pathwright": {
+			"type": "stdio",
+			"command": "uvx",
+			"args": ["--from", "pathwright", "pathwright-mcp"]
+		}
+	}
+}
+```
+
+For local testing from the current workspace (after `uv sync --all-groups`):
+
+```json
+{
+	"servers": {
+		"pathwrightLocal": {
+			"type": "stdio",
+			"command": "uv",
+			"args": ["run", "pathwright-mcp"],
+			"cwd": "${workspaceFolder}"
+		}
+	}
+}
+```
+
 Exposed tools map to the same filesystem operations as CLI:
 - `create_files`, `read_files`, `update_files`, `delete_files`
 - `search_files`, `copy_or_move_files`

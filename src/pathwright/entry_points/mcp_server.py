@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, is_dataclass
-from typing import Annotated, Any, Sequence
+from typing import Annotated, Any
 
 from fastmcp import FastMCP
 from pydantic import Field
@@ -23,6 +23,37 @@ def _to_serializable(value: Any) -> Any:
     if is_dataclass(value):
         return _to_serializable(asdict(value))
     return value
+
+
+def _normalize_line_intervals(
+    line_intervals: dict[str, list[list[int]]] | None,
+) -> dict[str, list[tuple[int, int]]] | None:
+    if line_intervals is None:
+        return None
+
+    normalized: dict[str, list[tuple[int, int]]] = {}
+    for path, intervals in line_intervals.items():
+        normalized[path] = []
+        for interval in intervals:
+            if len(interval) != 2:
+                raise ValueError(
+                    "line interval must contain exactly two values: start and end"
+                )
+            start_line, end_line = interval
+            normalized[path].append((start_line, end_line))
+    return normalized
+
+
+def _normalize_file_items(files: list[list[str]]) -> list[tuple[str, str]]:
+    normalized: list[tuple[str, str]] = []
+    for file_item in files:
+        if len(file_item) != 2:
+            raise ValueError(
+                "file item must contain exactly two values: path and content"
+            )
+        path, content = file_item
+        normalized.append((path, content))
+    return normalized
 
 
 mcp = FastMCP(
@@ -57,17 +88,19 @@ def build_service() -> FilesystemService:
 )
 def create_files(
     files: Annotated[
-        list[tuple[str, str]],
-        Field(description="Files to create as (path, content) tuples."),
+        list[list[str]],
+        Field(description="Files to create as [path, content] pairs."),
     ],
     overwrite: Annotated[
         bool,
         Field(description="Whether to overwrite existing files (default: false)."),
     ] = False,
 ) -> list[dict[str, Any]]:
-    """Create one or more files. Each tuple is (path, content)."""
+    """Create one or more files. Each item is [path, content]."""
     return _to_serializable(
-        build_service().create_files(files=files, overwrite=overwrite)
+        build_service().create_files(
+            files=_normalize_file_items(files), overwrite=overwrite
+        )
     )
 
 
@@ -84,15 +117,17 @@ def read_files(
         Field(description="File paths to read."),
     ],
     line_intervals: Annotated[
-        dict[str, Sequence[tuple[int, int]]] | None,
+        dict[str, list[list[int]]] | None,
         Field(
-            description="Optional map of path -> inclusive (start_line, end_line) intervals (default: null)."
+            description="Optional map of path -> inclusive [start_line, end_line] intervals (default: null)."
         ),
     ] = None,
 ) -> list[dict[str, Any]]:
     """Read one or more files by path, optionally by line intervals."""
     return _to_serializable(
-        build_service().read_files(paths=paths, line_intervals=line_intervals)
+        build_service().read_files(
+            paths=paths, line_intervals=_normalize_line_intervals(line_intervals)
+        )
     )
 
 
@@ -105,12 +140,14 @@ def read_files(
 )
 def update_files(
     files: Annotated[
-        list[tuple[str, str]],
-        Field(description="Files to update as (path, content) tuples."),
+        list[list[str]],
+        Field(description="Files to update as [path, content] pairs."),
     ],
 ) -> list[dict[str, Any]]:
-    """Update one or more files. Each tuple is (path, content)."""
-    return _to_serializable(build_service().update_files(files=files))
+    """Update one or more files. Each item is [path, content]."""
+    return _to_serializable(
+        build_service().update_files(files=_normalize_file_items(files))
+    )
 
 
 @mcp.tool(
